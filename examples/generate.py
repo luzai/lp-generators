@@ -1,9 +1,17 @@
 ''' Example script generating instances with varying properties. '''
+import sys 
+sys.path.insert(0,'/home/xinglu/prj/lp-generators-release') 
 
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
+import os, sys 
+from numba import njit 
 
+@njit
+def set_seed(value):
+    np.random.seed(value)
+    
 from lp_generators.lhs_generators import generate_lhs
 from lp_generators.solution_generators import generate_alpha, generate_beta
 from lp_generators.instance import EncodedInstance
@@ -22,36 +30,36 @@ def generate(seed):
     calculate and attach feature and performance data to each generated
     instance, write each instance to a .tar file so they can be loaded
     later to start a search, and write each instance to .mps format. '''
-
+    print('-> ',seed)
     # Seeded random number generator used in all processes.
-    random_state = np.random.RandomState(seed)
-
+    np.random.seed(seed)
+    set_seed(seed) 
     # Generation parameters to be passed to generating functions.
     size_params = dict(
-        variables=random_state.randint(50, 100),
-        constraints=random_state.randint(50, 100))
+        variables=np.random.randint(50, 100),
+        constraints=np.random.randint(50, 100))
     beta_params = dict(
-        basis_split=random_state.uniform(low=0.0, high=1.0))
+        basis_split=np.random.uniform(low=0.0, high=1.0))
     alpha_params = dict(
-        frac_violations=random_state.uniform(low=0.0, high=1.0),
-        beta_param=random_state.lognormal(mean=-0.2, sigma=1.8),
+        frac_violations=np.random.uniform(low=0.0, high=1.0),
+        beta_param=np.random.lognormal(mean=-0.2, sigma=1.8),
         mean_primal=0,
         std_primal=1,
         mean_dual=0,
         std_dual=1)
     lhs_params = dict(
-        density=random_state.uniform(low=0.3, high=0.7),
-        pv=random_state.uniform(low=0.0, high=1.0),
-        pc=random_state.uniform(low=0.0, high=1.0),
-        coeff_loc=random_state.uniform(low=-2.0, high=2.0),
-        coeff_scale=random_state.uniform(low=0.1, high=1.0))
+        density=np.random.uniform(low=0.3, high=0.7),
+        pv=np.random.uniform(low=0.0, high=1.0),
+        pc=np.random.uniform(low=0.0, high=1.0),
+        coeff_loc=np.random.uniform(low=-2.0, high=2.0),
+        coeff_scale=np.random.uniform(low=0.1, high=1.0))
 
     # Run the generating functions to produce encoding components and
     # return the constructed instance.
     instance = EncodedInstance(
-        lhs=generate_lhs(random_state=random_state, **size_params, **lhs_params).todense(),
-        alpha=generate_alpha(random_state=random_state, **size_params, **alpha_params),
-        beta=generate_beta(random_state=random_state, **size_params, **beta_params))
+        lhs=generate_lhs( **size_params, **lhs_params).todense(),
+        alpha=generate_alpha( **size_params, **alpha_params),
+        beta=generate_beta( **size_params, **beta_params))
     instance.data = dict(seed=seed)
     return instance
 
